@@ -1,0 +1,275 @@
+---
+title: "Privacy Rights Clearinghouse Exploratory Analysis"
+output: html_document
+date: '2022-07-29'
+---
+
+Name: <Matthias Cannon>
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Load the data 
+
+Let's load the data directly from the source. we will be looking at the "Privacy 
+Right Clearinghouse" data and specifically their "Chronology of Data Breaches" 
+at https://privacyrights.org/data-breaches.
+
+
+```{r}
+data_loc <- "https://privacyrights.org/sites/default/files/2020-01/PRC%20Data%20Breach%20Chronology%20-%201.13.20.csv"
+prc_raw <- read_csv(data_loc)
+```
+
+Note that there are messages and warnings, please talk about what is going on 
+with the data and why `read_csv` gave us those messages. If you need to add a 
+code chunk here and look at the data with `glimpse()` or `summary()` please do so and show your work.
+
+The reasoning for why the read_csv gave us those messages can be found after running the code glimpse(read_csv(data_loc)) which will tell us that we need to either specify the column types or set 'show_col_types = FALSE' to quiet this message.
+
+*(Your answer here)*
+
+```{r}
+# (insert any code you write here)
+
+view(prc)
+view(prc_raw)
+glimpse(prc)
+glimpse(prc_raw)
+glimpse(read_csv(data_loc))
+
+summary(prc)
+
+
+
+```
+
+
+
+# 2. What's in the data?
+
+a) Look at the shape of the data, how many rows? columns? 
+
+There is 9,015 rows within the (prc) and (prc_raw) data. There is a total of 13 columns in the (prc) data and 16 columns within (prc_raw) data.  
+
+b) Are any of the variables (columns) confusing (as in you don't know what the 
+   fields mean)? [hint: try `glimpse()` and I put a link above that lists out 
+   data in some of the fields]
+   
+A few of the fields that are confusing are those where the 1st and 3rd quarter as well as the mean and median are being expressed in terms of scientific notation. The remaining three columns of the data for prc_raw were a bit confusing as well. Not only were they integer values, these three columns had no data entries either. 
+
+c) Do any of the columns have missing data? (hint: `summary()`)
+
+Yes there are various columns that are missing data within both the prc and prc_raw dataset. 
+
+```{r}
+# insert any you write here.
+glimpse(prc)
+summary(prc)
+glimpse(prc_raw)
+summary(prc_raw)
+```
+
+
+# 3. Data Cleanup
+
+This code is provided, but it will not be provided on the final - please pay 
+attention to what it does!
+
+Note the columns have names with spaces and capital letters, and R does not like 
+that. It is showing the names with backticks around them and if you type them out, 
+you'd have to type backticks. Since we are all lazy, let's write some simple code 
+to avoid needing backticks as well as avoid using the shift key.
+
+`dplyr` within the tidyverse has a function `rename_with` that allows us to 
+specific a function to change the names. 
+
+Also the `date_made_public` column is a character vector, we will have to clean 
+that up (transform the data).
+
+```{r}
+# create a function that takes in a vector of names and transforms them:
+# function name is "fixname"
+# it accepts a variable called "x" that will be a vector of names.
+fixname <- function(x) {
+  # replace any spaces with underscore:  ?gsub
+  no_space <- gsub(" ", "_", x)
+  # make them all lower case, ?tolower
+  just_lower <- tolower(no_space)
+  # return that list of "fixed" names
+  return(just_lower)
+}
+
+prc <- prc_raw %>% 
+  rename_with(.fn = fixname) %>% 
+  # as ?as.Date for this function and ?strftime for a list of the date abbreviations used
+  mutate(date_made_public = as.Date(date_made_public, format="%m/%d/%Y")) %>% 
+  # let's remove any completely empty columns
+  # the combination of select, where, all and is.na can be a bit confusing...
+  select(where(~!all(is.na(.x))))
+
+```
+
+# 4. non-visual analyses
+
+Make use of `count()` here, maybe add `sort=TRUE` in the count function for an ordered result.
+
+## How many of each breach type are there ("types of breach")
+
+```{r}
+prc$date_made_public <- factor(prc$date_made_public, 
+                               ordered = TRUE)
+levels(prc$date_made_public)
+table(prc_raw$`Type of breach`)
+table(prc$type_of_breach)
+ggplot(data = prc) +
+  geom_bar(mapping = aes(x = type_of_breach))
+
+
+#Anything stick out to you about the above list of the types of breaches? 
+
+
+## How many of each type of organization are there? 
+
+```{r}
+typeof("type_of_organization")
+
+Any comments or thoughts on the above output? Anything questions raised for you? 
+
+
+## How many breaches were recorded each year? 
+
+```{r}
+
+```
+
+Anything odd or interesting stick out about the breaches per year? 
+
+# 5. Visualizations
+
+## Create a bar chart for the number of breaches every year. 
+
+```{r}
+bar <- ggplot(data = prc) + 
+  geom_bar(
+    mapping = aes(x = total_records, y = year_of_breach fill = "steelblue"), 
+    show.legend = FALSE,
+    width = 1
+  )```
+
+
+## Is there a trend in the date the breaches were made public?
+
+Create a histogram (`?geom_histogram`) for the `date_made_public`. Please use a 
+`fill="steelblue"` in the histogram!
+
+```{r}
+ggplot(filter(date_made_public, prc aes(x = date_made_public)) +
+  geom_histogram(binwidth = 0.5, center = 0)
+```
+
+Experiment with the number of bins above with by setting the `bins` argument in 
+the `geom_histogram`. Is there one that has a better message? 
+
+# 6. How do the types of breaches look over time?
+
+## Make a scatter plot
+
+We will build this out a scatter plot, so get a basic plot and then copy it down 
+to the next block and modify it.
+
+ * Set the horizontal (x) axis for the date_made_public
+ * Set the vertical (y) axis to the total_records
+ * set the color of the dots to the type_of_breach
+ 
+```{r}
+
+```
+
+## Improve the scatter plot
+
+ * Try setting the y axis to a log scale by adding a call to `scale_y_log10()`
+ * Try reducing the `alpha` in the `geom_point`, this will create some transparancy 
+   for the points
+ * Try adjusting the size of the points with `size`, maybe smaller will allow more 
+   points to be seen
+ * Move the legend to the bottom by adding `theme(legend.position="bottom")` to t
+   he end of the ggplot call
+ 
+```{r}
+
+```
+
+Write a few sentences about what you see in the scatter plot. Are there any 
+outliers or clusters of events that stick out? Just discuss any take aways or 
+questions left unanswered for you.
+
+*your answer here*
+
+# 7. Type of breach and organization
+
+How does the type of breach and the type of organization interact?
+
+## Generate a Heatmap
+
+ * Set the horizontal (x) axis for the type_of_breach
+ * Set the vertical (y) axis to the type_of_organization
+ * set the fill to the sum of breaches where each combination of x and y 
+   variables appear together
+ * use `geom_tile` as the geom
+
+Note: this will require some data transformation, specifically a count of the 
+pairs of entries for type_of_breach and type_of_organization. So create a new, 
+transformed data set with a count of the interactions and pass that into ggplot.
+
+```{r}
+
+```
+
+## Improve the heatmap
+
+Let's add labels onto the values:
+
+ * map the `label` aesthetic to the same count you derived for the fill 
+ * add a `geom_label` to the plot, override the fill and set to "white" for the label
+ 
+Let's also improve the scale used to fill colors
+ * add a `scale_fill_continuous(type="viridis")` to the plot
+ * trying creating a plot with and without `trans="log10"` in the `scale_fill_continuous` function, select which one you think works best.
+ 
+```{r}
+
+```
+
+Follow up questions:
+
+## What does the `trans="log10"` do in the fill scale?  
+
+
+## Which way (with/without the transformed scale) did you like better and why?
+
+
+## Is there anything else about the plot you would want to change? 
+
+Anything about the current plot look odd or looks like it could be improved?  Talk 
+through anything you would like to see different. 
+
+
+## Looking closely at the heat map
+
+What do you see? What is the plot communicating? Are there any potential "stories" that may pop out for you? 
+
+Write a paragraph about the types of breaches and the types of organizations and 
+any take aways or questions left unanswered for you.
+
+
+
+STILL WORKING ON THIS will have it in regardless of points. 
+
+
+
+
+
